@@ -11,7 +11,7 @@ extern crate kernel;
 use kernel::hil::time::{self, Alarm, Frequency};
 use kernel::hil::sensors::{AmbientLight, AmbientLightClient};
 
-pub struct Sensys<'a, A: Alarm + 'a>  {
+pub struct Sensys<'a, A: Alarm >  {
     alarm: &'a A,
     light: &'a AmbientLight,
 }

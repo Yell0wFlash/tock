@@ -11,7 +11,7 @@ extern crate kernel;
 use kernel::hil::time::{self, Alarm, Frequency};
 use kernel::hil::sensors::{AmbientLight, AmbientLightClient};
 
-pub struct Sosp<'a, A: Alarm + 'a>  {
+pub struct Sosp<'a, A: Alarm >  {
     alarm: &'a A,
     light: &'a AmbientLight,
 }

@@ -2,6 +2,7 @@
 //! sample the ambient light sensor.
 
 #![feature(const_fn, const_cell_new)]
+#![feature(infer_outlives_requirements)]
 #![no_std]
 
 #[allow(unused_imports)]
@@ -13,7 +14,7 @@ use kernel::hil::sensors::{AmbientLight, AmbientLightClient};
 use kernel::hil::time::{self, Alarm, Frequency};
 
 #[allow(unused)]
-pub struct Sensys<'a, A: Alarm + 'a> {
+pub struct Sensys<'a, A: Alarm> {
     alarm: &'a A,
     light: &'a AmbientLight,
 }
