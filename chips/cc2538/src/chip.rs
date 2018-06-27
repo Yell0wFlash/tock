@@ -1,9 +1,11 @@
 use cortexm3::{self, nvic};
 use kernel;
+use cc2538::gpio;
+use cc2538::peripheral_interrupts;
 
 
 pub struct Cc2538 {
-    mpu: (),
+    mpu: (),    
     systick: cortexm3::systick::SysTick,
 }
 
@@ -32,15 +34,18 @@ impl kernel::Chip for Cc2538 {
     fn service_pending_interrupts(&mut self) {
         unsafe {
             while let Some(interrupt) = nvic::next_pending() {
-                /*
+                
                 match interrupt {
-                    GPIO => gpio::PORT.handle_interrupt(),
+                    GPIOA => gpio::PA.handle_interrupt(),
+                    GPIOB => gpio::PB.handle_interrupt(),
+                    GPIOC => gpio::PC.handle_interrupt(),
+                    GPIOD => gpio::PD.handle_interrupt(),
                     // AON Programmable interrupt
                     // We need to ignore JTAG events since some debuggers emit these
-                    AON_PROG => (),
+                    //AON_PROG => (),
                     _ => panic!("unhandled interrupt {}", interrupt),
                 }
-                */
+                
                 let n = nvic::Nvic::new(interrupt);
                 n.clear_pending();
                 n.enable();

@@ -40,79 +40,173 @@ unsafe extern "C" fn hard_fault_handler() {
 #[link_section=".vectors"]
 #[cfg_attr(rustfmt, rustfmt_skip)]
 // no_mangle Ensures that the symbol is kept until the final binary
+//Must somehow direct vector table to correct address ?
 #[no_mangle]
-pub static BASE_VECTORS: [unsafe extern fn(); 69] = [
-    _estack,
-    reset_handler,
-    unhandled_interrupt, // NMI
-    hard_fault_handler, // Hard Fault
-    unhandled_interrupt, // MPU fault
+pub static BASE_VECTORS: [unsafe extern fn(); 163] = [
+    _estack, // -
+    reset_handler, //reset
+    unhandled_interrupt, // -
+    hard_fault_handler, // 3 Hard Fault
+    unhandled_interrupt, // memory management
     unhandled_interrupt, // Bus fault
     unhandled_interrupt, // Usage fault
     unhandled_interrupt, // Reserved
     unhandled_interrupt, // Reserved
     unhandled_interrupt, // Reserved
-    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // 10 Reserved
     SVC_Handler, // SVC
     unhandled_interrupt, // Debug monitor,
     unhandled_interrupt, // Reserved
     unhandled_interrupt, // PendSV
     systick_handler, // Systick
-    generic_isr, // GPIO Int handler
-    generic_isr, // I2C
-    generic_isr, // RF Core Command & Packet Engine 1
-    generic_isr, // AON SpiSplave Rx, Tx and CS
-    generic_isr, // AON RTC
-    generic_isr, // UART0 Rx and Tx
-    generic_isr, // AUX software event 0
-    generic_isr, // SSI0 Rx and Tx
-    generic_isr, // SSI1 Rx and Tx
-    generic_isr, // RF Core Command & Packet Engine 0
-    generic_isr, // RF Core Hardware
-    generic_isr, // RF Core Command Acknowledge
-    generic_isr, // I2S
-    generic_isr, // AUX software event 1
-    generic_isr, // Watchdog timer
-    generic_isr, // Timer 0 subtimer A
-    generic_isr, // Timer 0 subtimer B
-    generic_isr, // Timer 1 subtimer A
-    generic_isr, // Timer 1 subtimer B
-    generic_isr, // Timer 2 subtimer A
-    generic_isr, // Timer 2 subtimer B
-    generic_isr, // Timer 3 subtimer A
-    generic_isr, // Timer 3 subtimer B
-    generic_isr, // Crypto Core Result available
-    generic_isr, // uDMA Software
-    generic_isr, // uDMA Error
-    generic_isr, // Flash controller
-    generic_isr, // Software Event 0
-    generic_isr, // AUX combined event
-    generic_isr, // AON programmable 0
-    generic_isr, // Dynamic Programmable interrupt
-    // source (Default: PRCM)
-    generic_isr, // AUX Comparator A
-    generic_isr, // AUX ADC new sample or ADC DMA
-    // done, ADC underflow, ADC overflow
-    generic_isr,  // TRNG event
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr,
-    generic_isr
+    generic_isr, // GPIO Port A
+    generic_isr, // GPIO Port B
+    generic_isr, // GPIO Port C
+    generic_isr, // GPIO Port D
+    unhandled_interrupt, // 20 Reserved
+    generic_isr, // UART0
+    generic_isr, // UART1
+    unhandled_interrupt, // SSI0
+    unhandled_interrupt, // I2C
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // 30 ADC
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved    
+    unhandled_interrupt, // Watchdog Timer
+    unhandled_interrupt, // GPTimer 0A
+    unhandled_interrupt, // GPTimer 0B
+    unhandled_interrupt, // GPTimer 1A
+    unhandled_interrupt, // GPTimer 1B
+    unhandled_interrupt, // GPTimer 2A    
+    unhandled_interrupt, //40  GPTimer 2B
+    unhandled_interrupt, // Analog Comparator
+    unhandled_interrupt, // RF TX/RX (Alternate)
+    unhandled_interrupt, // RF Error (Alternate)
+    unhandled_interrupt, // System Control
+    unhandled_interrupt, // Flash memory control    
+    unhandled_interrupt, // AES (Alternate)
+    unhandled_interrupt, // PKA (Alternate)
+    unhandled_interrupt, // SM Timer (Alternate)
+    unhandled_interrupt, // MAC Timer (Alternate)
+    unhandled_interrupt, //50 SSI1
+    unhandled_interrupt, // GPTimer 3A
+    unhandled_interrupt, // GPTimer 3B 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //60 Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // µDMA software
+    unhandled_interrupt, // µDMA error
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //70 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //80 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //90 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //100 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //110 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //120 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //130 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //140 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, //150 Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // Reserved 
+    unhandled_interrupt, // Reserved
+    unhandled_interrupt, // USB
+    unhandled_interrupt, // RF Core Rx/Tx
+    unhandled_interrupt, // RF Core Error 
+    unhandled_interrupt, // AES
+    unhandled_interrupt, //160 PKA
+    unhandled_interrupt, // SM Timer
+    unhandled_interrupt, // MAC Timer
+    unhandled_interrupt, // Reserved
 ];
 
 /* #[link_section = ".vectors"]
@@ -124,73 +218,6 @@ pub unsafe extern "C" fn init() {
     let mut current_block;
     let mut p_src: *mut u32;
     let mut p_dest: *mut u32;
-
-    // Apply early initialization workarounds for anomalies documented on
-    // 2015-12-11 nRF52832 Errata v1.2
-    // http://infocenter.nordicsemi.com/pdf/nRF52832_Errata_v1.2.pdf
-
-    // Workaround for Errata 12
-    // "COMP: Reference ladder not correctly callibrated" found at the Errate doc
-    *(0x40013540i32 as (*mut u32)) = (*(0x10000324i32 as (*mut u32)) & 0x1f00u32) >> 8i32;
-
-    // Workaround for Errata 16
-    // "System: RAM may be corrupt on wakeup from CPU IDLE" found at the Errata doc
-    *(0x4007c074i32 as (*mut u32)) = 3131961357u32;
-
-    // Workaround for Errata 31
-    // "CLOCK: Calibration values are not correctly loaded from FICR at reset"
-    // found at the Errata doc
-    *(0x4000053ci32 as (*mut u32)) = (*(0x10000244i32 as (*mut u32)) & 0xe000u32) >> 13i32;
-
-    // Only needed for preview hardware
-    // // Workaround for Errata 32
-    // // "DIF: Debug session automatically enables TracePort pins" found at the Errata doc
-    // //    CoreDebug->DEMCR &= ~CoreDebug_DEMCR_TRCENA_Msk;
-    // *(0xe000edfcu32 as (*mut u32)) &= !0x01000000,
-
-    // Workaround for Errata 36
-    // "CLOCK: Some registers are not reset when expected" found at the Errata doc
-    //    NRF_CLOCK->EVENTS_DONE = 0;
-    //    NRF_CLOCK->EVENTS_CTTO = 0;
-    //    NRF_CLOCK->CTIV = 0;
-    // }
-
-    // Workaround for Errata 37
-    // "RADIO: Encryption engine is slow by default" found at the Errata document doc
-    *(0x400005a0i32 as (*mut u32)) = 0x3u32;
-
-    // Workaround for Errata 57
-    // "NFCT: NFC Modulation amplitude" found at the Errata doc
-    *(0x40005610i32 as (*mut u32)) = 0x5u32;
-    *(0x40005688i32 as (*mut u32)) = 0x1u32;
-    *(0x40005618i32 as (*mut u32)) = 0x0u32;
-    *(0x40005614i32 as (*mut u32)) = 0x3fu32;
-
-    // Workaround for Errata 66
-    // "TEMP: Linearity specification not met with default settings" found at the Errata doc
-    //     NRF_TEMP->A0 = NRF_FICR->TEMP.A0;
-    //     NRF_TEMP->A1 = NRF_FICR->TEMP.A1;
-    //     NRF_TEMP->A2 = NRF_FICR->TEMP.A2;
-    //     NRF_TEMP->A3 = NRF_FICR->TEMP.A3;
-    //     NRF_TEMP->A4 = NRF_FICR->TEMP.A4;
-    //     NRF_TEMP->A5 = NRF_FICR->TEMP.A5;
-    //     NRF_TEMP->B0 = NRF_FICR->TEMP.B0;
-    //     NRF_TEMP->B1 = NRF_FICR->TEMP.B1;
-    //     NRF_TEMP->B2 = NRF_FICR->TEMP.B2;
-    //     NRF_TEMP->B3 = NRF_FICR->TEMP.B3;
-    //     NRF_TEMP->B4 = NRF_FICR->TEMP.B4;
-    //     NRF_TEMP->B5 = NRF_FICR->TEMP.B5;
-    //     NRF_TEMP->T0 = NRF_FICR->TEMP.T0;
-    //     NRF_TEMP->T1 = NRF_FICR->TEMP.T1;
-    //     NRF_TEMP->T2 = NRF_FICR->TEMP.T2;
-    //     NRF_TEMP->T3 = NRF_FICR->TEMP.T3;
-    //     NRF_TEMP->T4 = NRF_FICR->TEMP.T4;
-    // }
-
-    // Workaround for Errata 108
-    // "RAM: RAM content cannot be trusted upon waking up from System ON Idle
-    // or System OFF mode" found at the Errata doc
-    *(0x40000ee4i32 as (*mut u32)) = *(0x10000258i32 as (*mut u32)) & 0x4fu32;
 
     // Move the relocate segment. This assumes it is located after the text
     // segment, which is where the storm linker file puts it
