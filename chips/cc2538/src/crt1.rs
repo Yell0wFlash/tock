@@ -33,7 +33,7 @@ unsafe extern "C" fn hard_fault_handler() {
 }
 
 #[link_section=".vectors"]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+//#[cfg_attr(rustfmt, rustfmt_skip)]
 // no_mangle Ensures that the symbol is kept until the final binary
 //Must somehow direct vector table to correct address ?
 #[no_mangle]
@@ -216,7 +216,7 @@ pub struct flash_cca_lock_page_t {
 pub static CCFG_CONF: flash_cca_lock_page_t = flash_cca_lock_page_t {
     bootldr_cfg: 0xF6,
     image_valid: 0x0,
-    vector_table: 0,//&BASE_VECTORS as *const u32,
+    vector_table: 0x00200000,//&BASE_VECTORS as *const u32,
     lock:  [ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
