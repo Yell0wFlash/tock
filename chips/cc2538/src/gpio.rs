@@ -2,7 +2,6 @@ use self::Pin::*;
 use core::cell::Cell;
 use core::ops::{Index, IndexMut};
 use kernel::common::regs::ReadWrite;
-use kernel::common::VolatileCell;
 use kernel::hil;
 use ioc;
 
@@ -16,31 +15,31 @@ struct GPIORegisters {
     //Data control
     pub data: [ReadWrite<u8>; 0x400], //offset=0x400 means 0x100 32-bit words
     //_reserved0: [u8; 0x3FC],
-    pub dir: VolatileCell<u32>,    
+    pub dir: ReadWrite<u32>,    
     //Pad interrupt control
-    pub is: VolatileCell<u32>,
-    pub ibe: VolatileCell<u32>,
-    pub iev: VolatileCell<u32>,
-    pub ie: VolatileCell<u32>,
-    pub ris: VolatileCell<u32>,
-    pub mis: VolatileCell<u32>,
-    pub ic: VolatileCell<u32>,
+    pub is: ReadWrite<u32>,
+    pub ibe: ReadWrite<u32>,
+    pub iev: ReadWrite<u32>,
+    pub ie: ReadWrite<u32>,
+    pub ris: ReadWrite<u32>,
+    pub mis: ReadWrite<u32>,
+    pub ic: ReadWrite<u32>,
     //Mode control
-    pub afsel: VolatileCell<u32>,
+    pub afsel: ReadWrite<u32>,
     _reserved1: [u8; 0xFC],
     //Commit Control
-    pub gpiolock: VolatileCell<u32>,
-    pub gpiocr: VolatileCell<u32>,
+    pub gpiolock: ReadWrite<u32>,
+    pub gpiocr: ReadWrite<u32>,
     _reserved2: [u8; 0x1D8],
     
-    pub pmux: VolatileCell<u32>,
+    pub pmux: ReadWrite<u32>,
     
     //Power up interrupt control
-    pub p_edge_ctrl: VolatileCell<u32>,
-    pub pi_ien: VolatileCell<u32>,
-    pub irq_detect_ack: VolatileCell<u32>,
-    pub usb_irq_ack: VolatileCell<u32>,
-    pub irq_detect_unmask: VolatileCell<u32>,
+    pub p_edge_ctrl: ReadWrite<u32>,
+    pub pi_ien: ReadWrite<u32>,
+    pub irq_detect_ack: ReadWrite<u32>,
+    pub usb_irq_ack: ReadWrite<u32>,
+    pub irq_detect_unmask: ReadWrite<u32>,
 
 }
 

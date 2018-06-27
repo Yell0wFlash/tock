@@ -15,6 +15,7 @@ extern crate cortexm3;
 
 // Amod peripheral_registers;
 
+pub mod peripheral_interrupts;
 pub mod chip;
 pub mod crt1;
 pub mod gpio;

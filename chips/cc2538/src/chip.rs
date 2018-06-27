@@ -1,7 +1,7 @@
 use cortexm3::{self, nvic};
 use kernel;
-use cc2538::gpio;
-use cc2538::peripheral_interrupts;
+use gpio;
+use peripheral_interrupts::*;
 
 
 pub struct Cc2538 {
@@ -55,5 +55,18 @@ impl kernel::Chip for Cc2538 {
 
     fn has_pending_interrupts(&self) -> bool {
         unsafe { nvic::has_pending() }
+    }
+
+    fn sleep(&self) {
+        unsafe {
+            cortexm3::support::wfi();
+        }
+    }
+
+    unsafe fn atomic<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce() -> R,
+    {
+        cortexm3::support::atomic(f)
     }
 }

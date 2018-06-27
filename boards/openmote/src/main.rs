@@ -1,9 +1,9 @@
 #![no_std]
 #![no_main]
-#![feature(lang_items, compiler_builtins_lib, asm)]
+#![feature(lang_items, asm, panic_implementation)]
 
 extern crate capsules;
-extern crate compiler_builtins;
+extern crate cortexm3;
 
 extern crate cc2538;
 
@@ -16,12 +16,12 @@ extern crate kernel;
 pub mod io;
 
 // How should the kernel respond when a process faults.
-const FAULT_RESPONSE: kernel::process::FaultResponse = kernel::process::FaultResponse::Panic;
+const FAULT_RESPONSE: kernel::procs::FaultResponse = kernel::procs::FaultResponse::Panic;
 
 // Number of concurrent processes this platform supports.
 const NUM_PROCS: usize = 2;
-//
-static mut PROCESSES: [Option<kernel::Process<'static>>; NUM_PROCS] = [None, None];
+static mut PROCESSES: [Option<&'static mut kernel::procs::Process<'static>>; NUM_PROCS] =
+    [None, None];
 
 #[link_section = ".app_memory"]
 // Give half of RAM to be dedicated APP memory
@@ -129,17 +129,17 @@ pub unsafe fn reset_handler() {
         static _sapps: u8;
     }
 
-    kernel::process::load_processes(
+    kernel::procs::load_processes(
         &_sapps as *const u8,
         &mut APP_MEMORY,
         &mut PROCESSES,
         FAULT_RESPONSE,
     );
 
-    kernel::main(
+    kernel::kernel_loop(
         &openmote,
         &mut chip,
         &mut PROCESSES,
-        &kernel::ipc::IPC::new(),
+        Some(&kernel::ipc::IPC::new()),
     );
 }
