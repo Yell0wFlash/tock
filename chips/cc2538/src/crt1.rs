@@ -36,8 +36,8 @@ unsafe extern "C" fn hard_fault_handler() {
 #[cfg_attr(rustfmt, rustfmt_skip)]
 // no_mangle Ensures that the symbol is kept until the final binary
 //Must somehow direct vector table to correct address ?
-//#[no_mangle]
-pub const BASE_VECTORS: [unsafe extern fn(); 164] = [
+#[no_mangle]
+pub static BASE_VECTORS: [unsafe extern fn(); 164] = [
     _estack, // -
     reset_handler, //reset
     unhandled_interrupt, // -
@@ -207,16 +207,16 @@ pub const BASE_VECTORS: [unsafe extern fn(); 164] = [
 pub struct flash_cca_lock_page_t {
     bootldr_cfg: u32,
     image_valid: u32,
-    vector_table: *const [unsafe extern fn(); 164], 
+    vector_table: u32, 
     lock: [u8; 32],
 }
 
-//#[no_mangle]
+#[no_mangle]
 #[link_section = ".ccfg"]
-pub const CCFG_CONF: flash_cca_lock_page_t = flash_cca_lock_page_t {
+pub static CCFG_CONF: flash_cca_lock_page_t = flash_cca_lock_page_t {
     bootldr_cfg: 0xF6,
     image_valid: 0x0,
-    vector_table: unsafe {&BASE_VECTORS},
+    vector_table: 0,//&BASE_VECTORS as *const u32,
     lock:  [ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
