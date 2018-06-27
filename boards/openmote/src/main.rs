@@ -80,15 +80,15 @@ pub unsafe fn reset_handler() {
             ), // Red
             (
                 &cc2538::gpio::PC[5],
-                capsules::led::ActivationMode::ActiveHigh
+                capsules::led::ActivationMode::ActiveLow
             ), // Orange
             (
                 &cc2538::gpio::PC[6],
-                capsules::led::ActivationMode::ActiveHigh
+                capsules::led::ActivationMode::ActiveLow
             ), //Yellow
             (
                 &cc2538::gpio::PC[7],
-                capsules::led::ActivationMode::ActiveLow
+                capsules::led::ActivationMode::ActiveHigh
             ) //Green      
         ]
     );

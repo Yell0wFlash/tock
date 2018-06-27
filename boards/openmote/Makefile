@@ -6,9 +6,9 @@ TARGET=thumbv7m-none-eabi
 
 PLATFORM=openmote
 #path to the flashing script
-BSL_BASE=~/work/cc2538-bsl
+BSL_BASE=/Users/admin/School/Ex-Jobb/cc2538-bsl-master
 #mote port
-PORT=/dev/tty.usbserial-00001014B
+PORT=/dev/tty.usbserial-14401
 
 include ../Makefile.common
 
