@@ -13,8 +13,8 @@ impl Cc2538 {
     pub unsafe fn new() -> Cc2538 {
         Cc2538 {
             mpu: (),
-            // The systick clocks with 48MHz by default
-            systick: cortexm3::systick::SysTick::new_with_calibration(48 * 1000000),
+            // The systick clocks with 32MHz by default
+            systick: cortexm3::systick::SysTick::new_with_calibration(32 * 1000000),
         }
     }
 }

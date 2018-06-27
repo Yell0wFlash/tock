@@ -10,11 +10,6 @@ use cortexm3::{generic_isr, nvic, systick_handler, SVC_Handler};
  * Copyright 2016, Michael Andersen <m.andersen@eecs.berkeley.edu>
  */
 
-/* https://github.com/NordicSemiconductor/nrf52-hardware-startup-hands-on/blob/master/
-           pca10040/s132/arm5_no_packs/RTE/Device/nRF52832_xxAA/arm_startup_nrf52.s */
-/* https://github.com/NordicSemiconductor/nRF52-ble-app-lbs/blob/master/
-           pca10040/s132/arm5_no_packs/RTE/Device/nRF52832_xxAA/system_nrf52.c */
-
 extern "C" {
     // Symbols defined in the linker file
     static mut _erelocate: u32;
