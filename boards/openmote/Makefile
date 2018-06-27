@@ -5,6 +5,15 @@ TOCK_ARCH=cortex-m3
 TARGET=thumbv7m-none-eabi
 
 PLATFORM=openmote
+#path to the flashing script
+BSL_BASE=~/work/cc2538-bsl
+#mote port
+PORT=/dev/tty.usbserial-00001014B
 
 include ../Makefile.common
+
+
+flash: target/$(TARGET)/release/openmote.bin
+	@echo "Flashing target/$(TARGET)/release/openmote.bin"
+	python $(BSL_BASE)/cc2538-bsl.py -e -w -v -a 0x00200000 -p $(PORT) --bootloader-invert-lines target/$(TARGET)/release/openmote.bin
 
