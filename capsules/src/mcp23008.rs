@@ -54,7 +54,7 @@
 //! `mcp23008` object is created.
 
 use core::cell::Cell;
-use kernel::common::cells::TakeCell;
+use kernel::common::cells::{OptionalCell, TakeCell};
 use kernel::hil;
 use kernel::ReturnCode;
 
@@ -121,10 +121,10 @@ pub struct MCP23008<'a> {
     interrupt_pin: Option<&'static hil::gpio::Pin>,
     interrupt_settings: Cell<u32>, // Whether the pin interrupt is enabled, and what mode it's in.
     identifier: Cell<usize>,
-    client: Cell<Option<&'static hil::gpio_async::Client>>,
+    client: OptionalCell<&'static hil::gpio_async::Client>,
 }
 
-impl<'a> MCP23008<'a> {
+impl MCP23008<'a> {
     pub fn new(
         i2c: &'a hil::i2c::I2CDevice,
         interrupt_pin: Option<&'static hil::gpio::Pin>,
@@ -137,7 +137,7 @@ impl<'a> MCP23008<'a> {
             interrupt_pin: interrupt_pin,
             interrupt_settings: Cell::new(0),
             identifier: Cell::new(0),
-            client: Cell::new(None),
+            client: OptionalCell::empty(),
         }
     }
 
@@ -145,7 +145,7 @@ impl<'a> MCP23008<'a> {
     /// occur. The `identifier` is simply passed back with the callback
     /// so that the upper layer can keep track of which device triggered.
     pub fn set_client<C: hil::gpio_async::Client>(&self, client: &'static C) {
-        self.client.set(Some(client));
+        self.client.set(client);
     }
 
     fn enable_host_interrupt(&self) -> ReturnCode {
@@ -314,7 +314,7 @@ impl<'a> MCP23008<'a> {
     }
 }
 
-impl<'a> hil::i2c::I2CClient for MCP23008<'a> {
+impl hil::i2c::I2CClient for MCP23008<'a> {
     fn command_complete(&self, buffer: &'static mut [u8], _error: hil::i2c::Error) {
         match self.state.get() {
             State::SelectIoDir(pin_number, direction) => {
@@ -384,7 +384,7 @@ impl<'a> hil::i2c::I2CClient for MCP23008<'a> {
             State::ReadGpioRead(pin_number) => {
                 let pin_value = (buffer[0] >> pin_number) & 0x01;
 
-                self.client.get().map(|client| {
+                self.client.map(|client| {
                     client.done(pin_value as usize);
                 });
 
@@ -428,7 +428,7 @@ impl<'a> hil::i2c::I2CClient for MCP23008<'a> {
                         };
                         if fire_interrupt {
                             // Signal this interrupt to the application.
-                            self.client.get().map(|client| {
+                            self.client.map(|client| {
                                 // Return both the pin that interrupted and
                                 // the identifier that was passed for
                                 // enable_interrupt.
@@ -443,7 +443,7 @@ impl<'a> hil::i2c::I2CClient for MCP23008<'a> {
                 self.state.set(State::Idle);
             }
             State::Done => {
-                self.client.get().map(|client| {
+                self.client.map(|client| {
                     client.done(0);
                 });
 
@@ -456,7 +456,7 @@ impl<'a> hil::i2c::I2CClient for MCP23008<'a> {
     }
 }
 
-impl<'a> hil::gpio::Client for MCP23008<'a> {
+impl hil::gpio::Client for MCP23008<'a> {
     fn fired(&self, _: usize) {
         self.buffer.take().map(|buffer| {
             self.i2c.enable();
@@ -470,7 +470,7 @@ impl<'a> hil::gpio::Client for MCP23008<'a> {
     }
 }
 
-impl<'a> hil::gpio_async::Port for MCP23008<'a> {
+impl hil::gpio_async::Port for MCP23008<'a> {
     fn disable(&self, pin: usize) -> ReturnCode {
         // Best we can do is make this an input.
         self.set_direction(pin as u8, Direction::Input)

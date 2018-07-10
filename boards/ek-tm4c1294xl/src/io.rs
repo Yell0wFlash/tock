@@ -1,4 +1,4 @@
-use core::fmt::*;
+use core::fmt::Write;
 use core::panic::PanicInfo;
 use core::str;
 use cortexm4;
@@ -44,5 +44,5 @@ impl Write for Writer {
 pub unsafe extern "C" fn panic_fmt(pi: &PanicInfo) -> ! {
     let led = &mut led::LedLow::new(&mut tm4c129x::gpio::PF[0]);
     let writer = &mut WRITER;
-    debug::panic(led, writer, pi, &cortexm4::support::nop)
+    debug::panic(&mut [led], writer, pi, &cortexm4::support::nop)
 }
