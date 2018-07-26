@@ -14,6 +14,13 @@ use capsules::virtual_spi::MuxSpiMaster;
 use kernel::hil;
 use nrf5x::rtc::Rtc;
 
+use kernel::hil::uart::UART;
+use nrf52::uart::UARTE0;
+
+
+
+
+
 /// Pins for SPI for the flash chip MX25R6435F
 #[derive(Debug)]
 pub struct SpiMX25R6435FPins {
@@ -69,7 +76,6 @@ pub struct Platform {
         VirtualMuxAlarm<'static, Rtc>,
     >,
     button: &'static capsules::button::Button<'static, nrf5x::gpio::GPIOPin>,
-    console: &'static capsules::console::Console<'static, nrf52::uart::Uarte>,
     gpio: &'static capsules::gpio::GPIO<'static, nrf5x::gpio::GPIOPin>,
     led: &'static capsules::led::LED<'static, nrf5x::gpio::GPIOPin>,
     rng: &'static capsules::rng::SimpleRng<'static, nrf5x::trng::Trng<'static>>,
@@ -90,7 +96,6 @@ impl kernel::Platform for Platform {
         F: FnOnce(Option<&kernel::Driver>) -> R,
     {
         match driver_num {
-            capsules::console::DRIVER_NUM => f(Some(self.console)),
             capsules::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules::led::DRIVER_NUM => f(Some(self.led)),
@@ -198,6 +203,7 @@ pub unsafe fn setup_board(
         nrf5x::pinmux::Pinmux::new(uart_pins.cts as u32),
         nrf5x::pinmux::Pinmux::new(uart_pins.rts as u32),
     );
+/*
     let console = static_init!(
         capsules::console::Console<nrf52::uart::Uarte>,
         capsules::console::Console::new(
@@ -208,12 +214,29 @@ pub unsafe fn setup_board(
             kernel::Grant::create()
         )
     );
+
     kernel::hil::uart::UART::set_client(&nrf52::uart::UARTE0, console);
     console.initialize();
 
+     
+  
+    
     // Attach the kernel debug interface to this console
     let kc = static_init!(capsules::console::App, capsules::console::App::default());
     kernel::debug::assign_console_driver(Some(console), kc);
+    
+   */
+
+    let buf = static_init!([u8; 2048], [0; 2048]);
+
+    // create an iterator of printable ascii characters and write to the uart buffer
+    for (ascii_char, b) in (33..126).cycle().zip(buf.iter_mut()) {
+        *b = ascii_char;
+    }
+
+    //&UARTE0.transmit(buf, 2048);
+
+    nrf52::uart::UARTE0.transmit(buf,2048);
 
     let ble_radio = static_init!(
         capsules::ble_advertising_driver::BLE<
@@ -354,7 +377,6 @@ pub unsafe fn setup_board(
     let platform = Platform {
         button: button,
         ble_radio: ble_radio,
-        console: console,
         led: led,
         gpio: gpio,
         rng: rng,
@@ -366,8 +388,8 @@ pub unsafe fn setup_board(
 
     let mut chip = nrf52::chip::NRF52::new();
 
-    debug!("Initialization complete. Entering main loop\r");
-    debug!("{}", &nrf52::ficr::FICR_INSTANCE);
+    //debug!("Initialization complete. Entering main loop\r");
+    //debug!("{}", &nrf52::ficr::FICR_INSTANCE);
 
     let board_kernel = static_init!(kernel::Kernel, kernel::Kernel::new());
 
