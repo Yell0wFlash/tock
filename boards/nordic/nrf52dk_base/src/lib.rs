@@ -8,18 +8,15 @@ extern crate capsules;
 extern crate kernel;
 extern crate nrf52;
 extern crate nrf5x;
+extern crate futures;
 
 use capsules::virtual_alarm::VirtualMuxAlarm;
 use capsules::virtual_spi::MuxSpiMaster;
 use kernel::hil;
 use nrf5x::rtc::Rtc;
+use futures::Future;
 
-use kernel::hil::uart::UART;
-use nrf52::uart::UARTE0;
-
-
-
-
+pub mod test_mod;
 
 /// Pins for SPI for the flash chip MX25R6435F
 #[derive(Debug)]
@@ -203,40 +200,9 @@ pub unsafe fn setup_board(
         nrf5x::pinmux::Pinmux::new(uart_pins.cts as u32),
         nrf5x::pinmux::Pinmux::new(uart_pins.rts as u32),
     );
-/*
-    let console = static_init!(
-        capsules::console::Console<nrf52::uart::Uarte>,
-        capsules::console::Console::new(
-            &nrf52::uart::UARTE0,
-            115200,
-            &mut capsules::console::WRITE_BUF,
-            &mut capsules::console::READ_BUF,
-            kernel::Grant::create()
-        )
-    );
 
-    kernel::hil::uart::UART::set_client(&nrf52::uart::UARTE0, console);
-    console.initialize();
 
-     
-  
-    
-    // Attach the kernel debug interface to this console
-    let kc = static_init!(capsules::console::App, capsules::console::App::default());
-    kernel::debug::assign_console_driver(Some(console), kc);
-    
-   */
-
-    let buf = static_init!([u8; 2048], [0; 2048]);
-
-    // create an iterator of printable ascii characters and write to the uart buffer
-    for (ascii_char, b) in (33..126).cycle().zip(buf.iter_mut()) {
-        *b = ascii_char;
-    }
-
-    //&UARTE0.transmit(buf, 2048);
-
-    nrf52::uart::UARTE0.transmit(buf,2048);
+    test_mod::run();
 
     let ble_radio = static_init!(
         capsules::ble_advertising_driver::BLE<

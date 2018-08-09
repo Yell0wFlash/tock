@@ -40,7 +40,7 @@
 //! * P0.15 -> Button3
 //! * P0.16 -> Button4
 //! * P0.21 -> Reset Button
-//!
+//!  
 //! ### `UART`
 //! * P0.05 -> RTS
 //! * P0.06 -> TXD
@@ -67,7 +67,7 @@
 
 extern crate capsules;
 #[allow(unused_imports)]
-#[macro_use(debug, debug_verbose, debug_gpio, static_init)]
+#[macro_use(debug, debug_gpio, static_init)]
 extern crate kernel;
 extern crate cortexm4;
 extern crate nrf52;
