@@ -21,10 +21,10 @@ pub unsafe fn run() {
         *b = ascii_char;
     }
 
+    //Works as a delay, will change this into a timer that waits 5-10 seconds before transmitting uart. Will represent blocking effect. 
 	for _x in 0..3000 {
 
 		for _y in 0..1000 {
-	   
 		}
 	 }
 
