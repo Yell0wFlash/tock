@@ -36,7 +36,7 @@ pub struct Platform {
 
     //gpio: &'static capsules::gpio::GPIO<'static, cc2538::gpio::GPIOPin>,
     led: &'static capsules::led::LED<'static, cc2538::gpio::GPIOPin>,
-    //console: &'static capsules::console::Console<'static, cc2538::uart::UART>,
+    console: &'static capsules::console::Console<'static, cc2538::uart::UART>,
 }
 
 impl kernel::Platform for Platform {
@@ -48,7 +48,7 @@ impl kernel::Platform for Platform {
             //capsules::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules::led::DRIVER_NUM => f(Some(self.led)),
             //capsules::button::DRIVER_NUM => f(Some(self.button)),
-            //capsules::console::DRIVER_NUM => f(Some(self.console)),
+            capsules::console::DRIVER_NUM => f(Some(self.console)),
             _ => f(None),
         }
     }
@@ -99,27 +99,28 @@ pub unsafe fn reset_handler() {
     
 
     //UART
-    /*
-    cc2538::uart::UART0.set_uart_pins(&cc2538::gpio::PA[1], &cc2538::gpio::PA[0]);
+    
+    cc2538::uart::UART0.set_uart_pins(cc2538::gpio::PA[1].get_pin(), cc2538::gpio::PA[0].get_pin());
     let console = static_init!(
         capsules::console::Console<cc2538::uart::UART>,
         capsules::console::Console::new(
             &cc2538::uart::UART0,
             115200,
             &mut capsules::console::WRITE_BUF,
+            &mut capsules::console::READ_BUF,
             kernel::Grant::create()
         )
     );
     kernel::hil::uart::UART::set_client(&cc2538::uart::UART0, console);
     console.initialize();
-	*/
+	
 
 
     let mut chip = cc2538::chip::Cc2538::new();
 
     let openmote = Platform{
         led,
-        //console,
+        console,
     };
 
     debug!("Initialization complete. Entering main loop\r");

@@ -17,6 +17,7 @@ extern crate cortexm3;
 
 pub mod peripheral_interrupts;
 pub mod chip;
+pub mod uart;
 pub mod crt1;
 pub mod gpio;
 pub mod ioc;

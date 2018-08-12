@@ -110,6 +110,10 @@ impl GPIOPin {
         ioc::override_config(self.pin, mode);
     }
 
+    pub fn get_pin(&self) -> u8 {
+        self.pin as u8
+    }
+
     
 }
 

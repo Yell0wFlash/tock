@@ -204,25 +204,6 @@ pub static BASE_VECTORS: [unsafe extern fn(); 164] = [
     unhandled_interrupt, // Reserved
 ];
 
-pub struct flash_cca_lock_page_t {
-    bootldr_cfg: u32,
-    image_valid: u32,
-    vector_table: u32, 
-    lock: [u8; 32],
-}
-
-#[no_mangle]
-#[link_section = ".ccfg"]
-pub static CCFG_CONF: flash_cca_lock_page_t = flash_cca_lock_page_t {
-    bootldr_cfg: 0xF6,
-    image_valid: 0x0,
-    vector_table: 0x00200000,//&BASE_VECTORS as *const u32,
-    lock:  [ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ],
-
-};
 
 /* #[link_section = ".vectors"]
 #[no_mangle] // Ensures that the symbol is kept until the final binary
