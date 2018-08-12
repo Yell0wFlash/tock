@@ -21,6 +21,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "futures"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "kernel"
 version = "0.1.0"
 dependencies = [
@@ -43,6 +48,7 @@ version = "0.1.0"
 dependencies = [
  "capsules 0.1.0",
  "cortexm4 0.1.0",
+ "futures 0.1.23 (registry+https://github.com/rust-lang/crates.io-index)",
  "kernel 0.1.0",
  "nrf52 0.1.0",
  "nrf52dk_base 0.1.0",
@@ -55,6 +61,7 @@ version = "0.1.0"
 dependencies = [
  "capsules 0.1.0",
  "cortexm4 0.1.0",
+ "futures 0.1.23 (registry+https://github.com/rust-lang/crates.io-index)",
  "kernel 0.1.0",
  "nrf52 0.1.0",
  "nrf5x 0.1.0",
@@ -75,3 +82,5 @@ version = "0.1.0"
 name = "tock-regs"
 version = "0.1.0"
 
+[metadata]
+"checksum futures 0.1.23 (registry+https://github.com/rust-lang/crates.io-index)" = "884dbe32a6ae4cd7da5c6db9b78114449df9953b8d490c9d7e1b51720b922c62"

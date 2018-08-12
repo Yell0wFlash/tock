@@ -1,4 +1,4 @@
-#![feature(asm, const_fn, core_intrinsics, try_from)]
+#![feature(asm, const_fn, core_intrinsics, try_from, used)]
 #![no_std]
 #![crate_name = "nrf52"]
 #![crate_type = "rlib"]
@@ -11,6 +11,7 @@ extern crate nrf5x;
 #[macro_use(debug, debug_verbose, debug_gpio, register_bitfields, register_bitmasks)]
 extern crate kernel;
 
+pub mod adc;
 pub mod chip;
 pub mod clock;
 pub mod crt1;

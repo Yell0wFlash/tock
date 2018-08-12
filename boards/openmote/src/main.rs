@@ -80,11 +80,11 @@ pub unsafe fn reset_handler() {
             ), // Red
             (
                 &cc2538::gpio::PC[5],
-                capsules::led::ActivationMode::ActiveHigh
+                capsules::led::ActivationMode::ActiveLow
             ), // Orange
             (
                 &cc2538::gpio::PC[6],
-                capsules::led::ActivationMode::ActiveHigh
+                capsules::led::ActivationMode::ActiveLow
             ), //Yellow
             (
                 &cc2538::gpio::PC[7],
@@ -123,7 +123,7 @@ pub unsafe fn reset_handler() {
         console,
     };
 
-    debug!("Initialization complete. Entering main loop\r");
+    //debug!("Initialization complete. Entering main loop\r");
 
     extern "C" {
         /// Beginning of the ROM region containing app images.

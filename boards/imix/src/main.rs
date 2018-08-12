@@ -5,6 +5,8 @@
 
 #![no_std]
 #![no_main]
+#![feature(in_band_lifetimes)]
+#![feature(infer_outlives_requirements)]
 #![feature(panic_implementation)]
 #![deny(missing_docs)]
 
@@ -561,8 +563,8 @@ pub unsafe fn reset_handler() {
     mac_device.set_device_procedure(radio_driver);
     radio_mac.set_transmit_client(radio_driver);
     radio_mac.set_receive_client(radio_driver);
-    radio_mac.set_pan(0xABCD);
-    radio_mac.set_address(0x1008);
+    radio_mac.set_pan(0x0000);
+    radio_mac.set_address(0xbbbb);
 
     // Configure the USB controller
     let usb_client = static_init!(
@@ -646,16 +648,20 @@ pub unsafe fn reset_handler() {
     rf233.start();
 
     debug!("Initialization complete. Entering main loop");
+
+    let board_kernel = static_init!(kernel::Kernel, kernel::Kernel::new());
+
     extern "C" {
         /// Beginning of the ROM region containing app images.
         static _sapps: u8;
     }
     kernel::procs::load_processes(
+        board_kernel,
         &_sapps as *const u8,
         &mut APP_MEMORY,
         &mut PROCESSES,
         FAULT_RESPONSE,
     );
 
-    kernel::kernel_loop(&imix, &mut chip, &mut PROCESSES, Some(&imix.ipc));
+    board_kernel.kernel_loop(&imix, &mut chip, &mut PROCESSES, Some(&imix.ipc));
 }

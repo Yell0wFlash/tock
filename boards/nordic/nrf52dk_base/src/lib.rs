@@ -8,9 +8,62 @@ extern crate capsules;
 extern crate kernel;
 extern crate nrf52;
 extern crate nrf5x;
+extern crate futures;
 
 use capsules::virtual_alarm::VirtualMuxAlarm;
+use capsules::virtual_spi::MuxSpiMaster;
+use kernel::hil;
 use nrf5x::rtc::Rtc;
+use futures::Future;
+
+pub mod test_mod;
+
+/// Pins for SPI for the flash chip MX25R6435F
+#[derive(Debug)]
+pub struct SpiMX25R6435FPins {
+    chip_select: usize,
+    write_protect_pin: usize,
+    hold_pin: usize,
+}
+
+impl SpiMX25R6435FPins {
+    pub fn new(chip_select: usize, write_protect_pin: usize, hold_pin: usize) -> Self {
+        Self {
+            chip_select,
+            write_protect_pin,
+            hold_pin,
+        }
+    }
+}
+
+/// Pins for the SPI driver
+#[derive(Debug)]
+pub struct SpiPins {
+    mosi: usize,
+    miso: usize,
+    clk: usize,
+}
+
+impl SpiPins {
+    pub fn new(mosi: usize, miso: usize, clk: usize) -> Self {
+        Self { mosi, miso, clk }
+    }
+}
+
+/// Pins for the UART
+#[derive(Debug)]
+pub struct UartPins {
+    rts: usize,
+    txd: usize,
+    cts: usize,
+    rxd: usize,
+}
+
+impl UartPins {
+    pub fn new(rts: usize, txd: usize, cts: usize, rxd: usize) -> Self {
+        Self { rts, txd, cts, rxd }
+    }
+}
 
 /// Supported drivers by the platform
 pub struct Platform {
@@ -20,7 +73,6 @@ pub struct Platform {
         VirtualMuxAlarm<'static, Rtc>,
     >,
     button: &'static capsules::button::Button<'static, nrf5x::gpio::GPIOPin>,
-    console: &'static capsules::console::Console<'static, nrf52::uart::Uarte>,
     gpio: &'static capsules::gpio::GPIO<'static, nrf5x::gpio::GPIOPin>,
     led: &'static capsules::led::LED<'static, nrf5x::gpio::GPIOPin>,
     rng: &'static capsules::rng::SimpleRng<'static, nrf5x::trng::Trng<'static>>,
@@ -30,6 +82,9 @@ pub struct Platform {
         'static,
         capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
     >,
+    // The nRF52dk does not have the flash chip on it, so we make this optional.
+    nonvolatile_storage:
+        Option<&'static capsules::nonvolatile_storage_driver::NonvolatileStorage<'static>>,
 }
 
 impl kernel::Platform for Platform {
@@ -38,7 +93,6 @@ impl kernel::Platform for Platform {
         F: FnOnce(Option<&kernel::Driver>) -> R,
     {
         match driver_num {
-            capsules::console::DRIVER_NUM => f(Some(self.console)),
             capsules::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules::led::DRIVER_NUM => f(Some(self.led)),
@@ -46,6 +100,9 @@ impl kernel::Platform for Platform {
             capsules::rng::DRIVER_NUM => f(Some(self.rng)),
             capsules::ble_advertising_driver::DRIVER_NUM => f(Some(self.ble_radio)),
             capsules::temperature::DRIVER_NUM => f(Some(self.temp)),
+            capsules::nonvolatile_storage_driver::DRIVER_NUM => {
+                f(self.nonvolatile_storage.map_or(None, |nv| Some(nv)))
+            }
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -53,6 +110,7 @@ impl kernel::Platform for Platform {
 }
 
 /// Generic function for starting an nrf52dk board.
+#[inline]
 pub unsafe fn setup_board(
     button_rst_pin: usize,
     gpio_pins: &'static mut [&'static nrf5x::gpio::GPIOPin],
@@ -60,6 +118,9 @@ pub unsafe fn setup_board(
     debug_pin2_index: usize,
     debug_pin3_index: usize,
     led_pins: &'static mut [(&'static nrf5x::gpio::GPIOPin, capsules::led::ActivationMode)],
+    uart_pins: &UartPins,
+    spi_pins: &SpiPins,
+    mx25r6435f: &Option<SpiMX25R6435FPins>,
     button_pins: &'static mut [(&'static nrf5x::gpio::GPIOPin, capsules::button::GpioMode)],
     app_memory: &mut [u8],
     process_pointers: &'static mut [core::option::Option<
@@ -134,27 +195,14 @@ pub unsafe fn setup_board(
     );
 
     nrf52::uart::UARTE0.configure(
-        nrf5x::pinmux::Pinmux::new(6), // tx
-        nrf5x::pinmux::Pinmux::new(8), // rx
-        nrf5x::pinmux::Pinmux::new(7), // cts
-        nrf5x::pinmux::Pinmux::new(5),
-    ); // rts
-    let console = static_init!(
-        capsules::console::Console<nrf52::uart::Uarte>,
-        capsules::console::Console::new(
-            &nrf52::uart::UARTE0,
-            115200,
-            &mut capsules::console::WRITE_BUF,
-            &mut capsules::console::READ_BUF,
-            kernel::Grant::create()
-        )
+        nrf5x::pinmux::Pinmux::new(uart_pins.txd as u32),
+        nrf5x::pinmux::Pinmux::new(uart_pins.rxd as u32),
+        nrf5x::pinmux::Pinmux::new(uart_pins.cts as u32),
+        nrf5x::pinmux::Pinmux::new(uart_pins.rts as u32),
     );
-    kernel::hil::uart::UART::set_client(&nrf52::uart::UARTE0, console);
-    console.initialize();
 
-    // Attach the kernel debug interface to this console
-    let kc = static_init!(capsules::console::App, capsules::console::App::default());
-    kernel::debug::assign_console_driver(Some(console), kc);
+
+    test_mod::run();
 
     let ble_radio = static_init!(
         capsules::ble_advertising_driver::BLE<
@@ -194,6 +242,92 @@ pub unsafe fn setup_board(
     );
     nrf5x::trng::TRNG.set_client(rng);
 
+    // SPI
+    let mux_spi = static_init!(
+        MuxSpiMaster<'static, nrf52::spi::SPIM>,
+        MuxSpiMaster::new(&nrf52::spi::SPIM0)
+    );
+    hil::spi::SpiMaster::set_client(&nrf52::spi::SPIM0, mux_spi);
+    hil::spi::SpiMaster::init(&nrf52::spi::SPIM0);
+    nrf52::spi::SPIM0.configure(
+        nrf5x::pinmux::Pinmux::new(spi_pins.mosi as u32),
+        nrf5x::pinmux::Pinmux::new(spi_pins.miso as u32),
+        nrf5x::pinmux::Pinmux::new(spi_pins.clk as u32),
+    );
+
+    let nonvolatile_storage: Option<
+        &'static capsules::nonvolatile_storage_driver::NonvolatileStorage<'static>,
+    > = if let Some(driver) = mx25r6435f {
+        // Create a SPI device for the mx25r6435f flash chip.
+        let mx25r6435f_spi = static_init!(
+            capsules::virtual_spi::VirtualSpiMasterDevice<'static, nrf52::spi::SPIM>,
+            capsules::virtual_spi::VirtualSpiMasterDevice::new(
+                mux_spi,
+                &nrf5x::gpio::PORT[driver.chip_select]
+            )
+        );
+        // Create an alarm for this chip.
+        let mx25r6435f_virtual_alarm = static_init!(
+            VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
+            VirtualMuxAlarm::new(mux_alarm)
+        );
+        // Setup the actual MX25R6435F driver.
+        let mx25r6435f = static_init!(
+            capsules::mx25r6435f::MX25R6435F<
+                'static,
+                capsules::virtual_spi::VirtualSpiMasterDevice<'static, nrf52::spi::SPIM>,
+                nrf5x::gpio::GPIOPin,
+                VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
+            >,
+            capsules::mx25r6435f::MX25R6435F::new(
+                mx25r6435f_spi,
+                mx25r6435f_virtual_alarm,
+                &mut capsules::mx25r6435f::TXBUFFER,
+                &mut capsules::mx25r6435f::RXBUFFER,
+                Some(&nrf5x::gpio::PORT[driver.write_protect_pin]),
+                Some(&nrf5x::gpio::PORT[driver.hold_pin])
+            )
+        );
+        mx25r6435f_spi.set_client(mx25r6435f);
+        mx25r6435f_virtual_alarm.set_client(mx25r6435f);
+
+        pub static mut FLASH_PAGEBUFFER: capsules::mx25r6435f::Mx25r6435fSector =
+            capsules::mx25r6435f::Mx25r6435fSector::new();
+        let nv_to_page = static_init!(
+            capsules::nonvolatile_to_pages::NonvolatileToPages<
+                'static,
+                capsules::mx25r6435f::MX25R6435F<
+                    'static,
+                    capsules::virtual_spi::VirtualSpiMasterDevice<'static, nrf52::spi::SPIM>,
+                    nrf5x::gpio::GPIOPin,
+                    VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
+                >,
+            >,
+            capsules::nonvolatile_to_pages::NonvolatileToPages::new(
+                mx25r6435f,
+                &mut FLASH_PAGEBUFFER
+            )
+        );
+        hil::flash::HasClient::set_client(mx25r6435f, nv_to_page);
+
+        let nonvolatile_storage = static_init!(
+            capsules::nonvolatile_storage_driver::NonvolatileStorage<'static>,
+            capsules::nonvolatile_storage_driver::NonvolatileStorage::new(
+                nv_to_page,
+                kernel::Grant::create(),
+                0x60000, // Start address for userspace accessible region
+                0x20000, // Length of userspace accessible region
+                0,       // Start address of kernel accessible region
+                0x60000, // Length of kernel accessible region
+                &mut capsules::nonvolatile_storage_driver::BUFFER
+            )
+        );
+        hil::nonvolatile_storage::NonvolatileStorage::set_client(nv_to_page, nonvolatile_storage);
+        Some(nonvolatile_storage)
+    } else {
+        None
+    };
+
     // Start all of the clocks. Low power operation will require a better
     // approach than this.
     nrf52::clock::CLOCK.low_stop();
@@ -209,30 +343,33 @@ pub unsafe fn setup_board(
     let platform = Platform {
         button: button,
         ble_radio: ble_radio,
-        console: console,
         led: led,
         gpio: gpio,
         rng: rng,
         temp: temp,
         alarm: alarm,
+        nonvolatile_storage: nonvolatile_storage,
         ipc: kernel::ipc::IPC::new(),
     };
 
     let mut chip = nrf52::chip::NRF52::new();
 
-    debug!("Initialization complete. Entering main loop\r");
-    debug!("{}", &nrf52::ficr::FICR_INSTANCE);
+    //debug!("Initialization complete. Entering main loop\r");
+    //debug!("{}", &nrf52::ficr::FICR_INSTANCE);
+
+    let board_kernel = static_init!(kernel::Kernel, kernel::Kernel::new());
 
     extern "C" {
         /// Beginning of the ROM region containing app images.
         static _sapps: u8;
     }
     kernel::procs::load_processes(
+        board_kernel,
         &_sapps as *const u8,
         app_memory,
         process_pointers,
         app_fault_response,
     );
 
-    kernel::kernel_loop(&platform, &mut chip, process_pointers, Some(&platform.ipc));
+    board_kernel.kernel_loop(&platform, &mut chip, process_pointers, Some(&platform.ipc));
 }

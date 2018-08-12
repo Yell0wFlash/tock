@@ -31,7 +31,7 @@
 
 use core::cell::Cell;
 use core::cmp;
-use kernel::common::cells::{MapCell, TakeCell};
+use kernel::common::cells::{MapCell, OptionalCell, TakeCell};
 use kernel::hil;
 use kernel::{AppId, AppSlice, Callback, Driver, ReturnCode, Shared};
 
@@ -40,7 +40,7 @@ pub const DRIVER_NUM: usize = 0x00000005;
 
 /// ADC application driver, used by applications to interact with ADC.
 /// Not currently virtualized, only one application can use it at a time.
-pub struct Adc<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> {
+pub struct Adc<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed> {
     // ADC driver
     adc: &'a A,
     channels: &'a [&'a <A as hil::adc::Adc>::Channel],
@@ -52,7 +52,7 @@ pub struct Adc<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> {
     // App state
     app: MapCell<App>,
     channel: Cell<usize>,
-    callback: Cell<Option<Callback>>,
+    callback: OptionalCell<Callback>,
     app_buf_offset: Cell<usize>,
     samples_remaining: Cell<usize>,
     samples_outstanding: Cell<usize>,
@@ -100,7 +100,7 @@ pub static mut ADC_BUFFER2: [u16; 128] = [0; 128];
 pub static mut ADC_BUFFER3: [u16; 128] = [0; 128];
 
 /// Functions to create, initialize, and interact with the ADC
-impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
+impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> Adc<'a, A> {
     /// Create a new Adc application interface
     ///
     /// adc - ADC driver to provide application access to
@@ -126,7 +126,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
             // App state
             app: MapCell::new(App::default()),
             channel: Cell::new(0),
-            callback: Cell::new(None),
+            callback: OptionalCell::empty(),
             app_buf_offset: Cell::new(0),
             samples_remaining: Cell::new(0),
             samples_outstanding: Cell::new(0),
@@ -138,12 +138,6 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
             adc_buf2: TakeCell::new(adc_buf2),
             adc_buf3: TakeCell::new(adc_buf3),
         }
-    }
-
-    /// Initialize the ADC
-    /// This can be called harmlessly if the ADC has already been initialized
-    fn initialize(&self) -> ReturnCode {
-        self.adc.initialize()
     }
 
     /// Store a buffer we've regained ownership of and return a handle to it
@@ -192,12 +186,6 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
             return ReturnCode::EBUSY;
         }
 
-        // always initialize. Initialization will be skipped if already complete
-        let res = self.initialize();
-        if res != ReturnCode::SUCCESS {
-            return res;
-        }
-
         // convert channel index
         if channel >= self.channels.len() {
             return ReturnCode::EINVAL;
@@ -230,12 +218,6 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
         // only one sample at a time
         if self.active.get() {
             return ReturnCode::EBUSY;
-        }
-
-        // always initialize. Initialization will be skipped if already complete
-        let res = self.initialize();
-        if res != ReturnCode::SUCCESS {
-            return res;
         }
 
         // convert channel index
@@ -272,12 +254,6 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
         // only one sample at a time
         if self.active.get() {
             return ReturnCode::EBUSY;
-        }
-
-        // always initialize. Initialization will be skipped if already complete
-        let res = self.initialize();
-        if res != ReturnCode::SUCCESS {
-            return res;
         }
 
         // convert channel index
@@ -363,12 +339,6 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
         // only one sample at a time
         if self.active.get() {
             return ReturnCode::EBUSY;
-        }
-
-        // always initialize. Initialization will be skipped if already complete
-        let res = self.initialize();
-        if res != ReturnCode::SUCCESS {
-            return res;
         }
 
         // convert channel index
@@ -496,7 +466,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Adc<'a, A> {
 }
 
 /// Callbacks from the ADC driver
-impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> hil::adc::Client for Adc<'a, A> {
+impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> hil::adc::Client for Adc<'a, A> {
     /// Single sample operation complete
     /// Collects the sample and provides a callback to the application
     ///
@@ -508,7 +478,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> hil::adc::Client for Ad
             self.mode.set(AdcMode::NoMode);
 
             // perform callback
-            self.callback.get().map(|mut callback| {
+            self.callback.map(|callback| {
                 callback.schedule(
                     AdcMode::SingleSample as usize,
                     self.channel.get(),
@@ -519,7 +489,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> hil::adc::Client for Ad
             // sample ready in continuous sampling operation, keep state
 
             // perform callback
-            self.callback.get().map(|mut callback| {
+            self.callback.map(|callback| {
                 callback.schedule(
                     AdcMode::ContinuousSample as usize,
                     self.channel.get(),
@@ -536,7 +506,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> hil::adc::Client for Ad
 }
 
 /// Callbacks from the High Speed ADC driver
-impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> hil::adc::HighSpeedClient for Adc<'a, A> {
+impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> hil::adc::HighSpeedClient for Adc<'a, A> {
     /// Internal buffer has filled from a buffered sampling operation.
     /// Copies data over to application buffer, determines if more data is
     /// needed, and performs a callback to the application if ready. If
@@ -744,7 +714,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> hil::adc::HighSpeedClie
                     // if the app_buffer is filled, perform callback
                     if perform_callback {
                         // actually schedule the callback
-                        self.callback.get().map(|mut callback| {
+                        self.callback.map(|callback| {
                             let len_chan = ((app_buf.len() / 2) << 8) | (self.channel.get() & 0xFF);
                             callback.schedule(
                                 self.mode.get() as usize,
@@ -793,7 +763,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> hil::adc::HighSpeedClie
 }
 
 /// Implementations of application syscalls
-impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Driver for Adc<'a, A> {
+impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> Driver for Adc<'a, A> {
     /// Provides access to a buffer from the application to store data in or
     /// read data from
     ///
@@ -847,7 +817,7 @@ impl<'a, A: hil::adc::Adc + hil::adc::AdcHighSpeed + 'a> Driver for Adc<'a, A> {
             // subscribe to ADC sample done (from all types of sampling)
             0 => {
                 // set callback
-                self.callback.set(callback);
+                self.callback.insert(callback);
                 ReturnCode::SUCCESS
             }
 
