@@ -220,6 +220,10 @@ impl UART {
         regs.lcrh.modify(LineControl::FIFO_ENABLE::CLEAR);
     }
 
+    pub fn tx_ready(&self) -> bool {
+        let regs = unsafe { &*self.regs };
+        !regs.fr.is_set(Flags::TX_FIFO_FULL)
+    }
 
     pub fn send_data(&self, c: u8) {
         let regs = unsafe { &*self.regs };

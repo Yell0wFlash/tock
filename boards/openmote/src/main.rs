@@ -4,7 +4,6 @@
 
 extern crate capsules;
 extern crate cortexm3;
-
 extern crate cc2538;
 
 #[allow(unused_imports)]
@@ -68,7 +67,7 @@ pub unsafe fn reset_handler() {
     // Wait for it to turn on until we continue
     //while !prcm::Power::is_enabled(prcm::PowerDomain::Peripherals) {}
 
-
+    let board_kernel = static_init!(kernel::Kernel, kernel::Kernel::new());
 
     // LEDs
     let led_pins = static_init!(
@@ -97,9 +96,7 @@ pub unsafe fn reset_handler() {
         capsules::led::LED::new(led_pins)
     );
     
-
     //UART
-    
     cc2538::uart::UART0.set_uart_pins(cc2538::gpio::PA[1].get_pin(), cc2538::gpio::PA[0].get_pin());
     let console = static_init!(
         capsules::console::Console<cc2538::uart::UART>,
@@ -113,8 +110,6 @@ pub unsafe fn reset_handler() {
     );
     kernel::hil::uart::UART::set_client(&cc2538::uart::UART0, console);
     console.initialize();
-	
-
 
     let mut chip = cc2538::chip::Cc2538::new();
 
@@ -131,16 +126,18 @@ pub unsafe fn reset_handler() {
     }
 
     kernel::procs::load_processes(
+        board_kernel,
         &_sapps as *const u8,
         &mut APP_MEMORY,
         &mut PROCESSES,
         FAULT_RESPONSE,
     );
 
-    kernel::kernel_loop(
+    board_kernel.kernel_loop(
         &openmote,
         &mut chip,
         &mut PROCESSES,
-        Some(&kernel::ipc::IPC::new()),
+        Some(&kernel::ipc::IPC::new()), 
     );
 }
+
